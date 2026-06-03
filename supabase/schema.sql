@@ -11,11 +11,15 @@ create table tasks (
   status       task_status not null default 'todo',
   created_at   timestamptz not null default now(),
   completed_at timestamptz,
-  created_by   assignee not null
+  created_by   assignee not null,
+  -- Stretch tasks are "potential" work staged on the Stretch screen. They stay
+  -- out of the main list and the burn-up until promoted (stretch -> false).
+  stretch      boolean not null default false
 );
 
 create index tasks_created_at_idx on tasks (created_at);
 create index tasks_completed_at_idx on tasks (completed_at);
+create index tasks_stretch_idx on tasks (stretch);
 
 alter table tasks enable row level security;
 create policy "anon all" on tasks for all using (true) with check (true);

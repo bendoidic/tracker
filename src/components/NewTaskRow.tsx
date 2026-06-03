@@ -5,7 +5,13 @@ import { ASSIGNEES, Assignee, NewTask } from "@/lib/types";
 import { supabase } from "@/lib/supabase";
 import { useWhoAmI } from "./WhoAmI";
 
-export function NewTaskRow({ onCreated }: { onCreated?: () => void }) {
+export function NewTaskRow({
+  onCreated,
+  stretch = false,
+}: {
+  onCreated?: () => void;
+  stretch?: boolean;
+}) {
   const [who] = useWhoAmI();
   const [title, setTitle] = useState("");
   const [assignee, setAssignee] = useState<Assignee>(who ?? "miki");
@@ -28,6 +34,7 @@ export function NewTaskRow({ onCreated }: { onCreated?: () => void }) {
       assignee,
       deadline: deadline ? new Date(deadline).toISOString() : null,
       created_by: who,
+      stretch,
     };
     const { error: err } = await supabase().from("tasks").insert(payload);
     setBusy(false);

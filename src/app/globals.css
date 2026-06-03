@@ -6,3 +6,28 @@ html, body {
   background: #fafafa;
   color: #111;
 }
+
+/* Vertical news-ticker for the burn-up "In progress" carousel.
+   The track holds two identical copies of the cards; translating it by -50%
+   lands exactly on the start of the second copy, so the loop is seamless.
+   Each card carries its own bottom margin (no flex gap) to keep that math exact. */
+@keyframes ticker-scroll {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-50%); }
+}
+
+.ticker-track {
+  animation-name: ticker-scroll;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.ticker-viewport:hover .ticker-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track {
+    animation: none;
+  }
+}

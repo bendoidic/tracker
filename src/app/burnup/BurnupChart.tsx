@@ -13,6 +13,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { Task } from "@/lib/types";
 import { burnupSeries } from "@/lib/burnup";
+import { InProgressTicker } from "./InProgressTicker";
 
 export function BurnupChart({ target }: { target: string | null }) {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -21,6 +22,7 @@ export function BurnupChart({ target }: { target: string | null }) {
     const { data } = await supabase()
       .from("tasks")
       .select("*")
+      .eq("stretch", false)
       .order("created_at", { ascending: true });
     if (data) setTasks(data as Task[]);
   }, []);
@@ -48,6 +50,10 @@ export function BurnupChart({ target }: { target: string | null }) {
   const total = tasks.length;
   const done = tasks.filter((t) => t.status === "done").length;
   const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+  const inProgress = useMemo(
+    () => tasks.filter((t) => t.status === "in_progress"),
+    [tasks]
+  );
 
   const daysLeft = useMemo(() => {
     if (!target) return null;
@@ -60,8 +66,14 @@ export function BurnupChart({ target }: { target: string | null }) {
 
   return (
     <div className="flex h-full w-full flex-col p-8">
-      <div className="flex items-baseline justify-between">
-        <h1 className="text-4xl font-semibold tracking-tight">Team burn-up</h1>
+      <div className="grid grid-cols-[auto_1fr_auto] items-center gap-8">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/team-lego-logo-light.png" alt="Team Lego" className="h-12 w-auto shrink-0" />
+
+        <div className="flex justify-center">
+          <InProgressTicker tasks={inProgress} />
+        </div>
+
         <div className="flex items-baseline gap-8 text-2xl">
           <Stat label="total" value={String(total)} />
           <Stat label="done" value={String(done)} accent="text-green-400" />

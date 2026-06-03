@@ -13,6 +13,9 @@ export type Task = {
   created_at: string;
   completed_at: string | null;
   created_by: Assignee;
+  // Staged "potential" work. While true the task is hidden from the list and
+  // the burn-up; promoting it on the Stretch screen sets this back to false.
+  stretch: boolean;
 };
 
 export type NewTask = {
@@ -20,4 +23,5 @@ export type NewTask = {
   assignee: Assignee;
   deadline: string | null;
   created_by: Assignee;
+  stretch?: boolean;
 };

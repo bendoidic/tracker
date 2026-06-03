@@ -6,12 +6,14 @@ export default function ChromeLayout({ children }: { children: React.ReactNode }
     <div className="mx-auto max-w-5xl px-4 py-6">
       <header className="mb-6 flex items-center justify-between border-b border-neutral-200 pb-4">
         <div className="flex items-center gap-4">
-          <Link href="/" className="text-lg font-semibold">
-            Tracker
+          <Link href="/" className="shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/team-lego-logo-dark.png" alt="Team Lego" className="h-9 w-auto" />
           </Link>
           <nav className="flex gap-3 text-sm text-neutral-600">
             <Link href="/" className="hover:text-neutral-900">List</Link>
             <Link href="/bulk" className="hover:text-neutral-900">Bulk add</Link>
+            <Link href="/stretch" className="hover:text-neutral-900">Stretch</Link>
             <Link href="/burnup" className="hover:text-neutral-900">Burn-up</Link>
           </nav>
         </div>

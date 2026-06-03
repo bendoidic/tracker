@@ -4,23 +4,18 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Task } from "@/lib/types";
 import { supabase } from "@/lib/supabase";
 import { NewTaskRow } from "@/components/NewTaskRow";
-import { TaskRow } from "@/components/TaskRow";
-import { Filters, TaskFilters } from "@/components/TaskFilters";
+import { StretchTaskRow } from "@/components/StretchTaskRow";
 import { sortTasks } from "@/lib/sort-tasks";
 
-export default function ListPage() {
+export default function StretchPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState<Filters>({
-    assignees: new Set(),
-    statuses: new Set(),
-  });
 
   const fetchTasks = useCallback(async () => {
     const { data, error } = await supabase()
       .from("tasks")
       .select("*")
-      .eq("stretch", false)
+      .eq("stretch", true)
       .order("created_at", { ascending: false });
     if (!error && data) setTasks(data as Task[]);
     setLoading(false);
@@ -29,7 +24,7 @@ export default function ListPage() {
   useEffect(() => {
     fetchTasks();
     const ch = supabase()
-      .channel("tasks-list")
+      .channel("tasks-stretch")
       .on("postgres_changes", { event: "*", schema: "public", table: "tasks" }, () => {
         fetchTasks();
       })
@@ -39,30 +34,31 @@ export default function ListPage() {
     };
   }, [fetchTasks]);
 
-  const filtered = useMemo(() => {
-    const visible = tasks.filter((t) => {
-      if (filters.assignees.size > 0 && !filters.assignees.has(t.assignee)) return false;
-      if (filters.statuses.size > 0 && !filters.statuses.has(t.status)) return false;
-      return true;
-    });
-    return sortTasks(visible);
-  }, [tasks, filters]);
+  const sorted = useMemo(() => sortTasks(tasks), [tasks]);
 
   return (
     <div className="space-y-4">
-      <NewTaskRow onCreated={fetchTasks} />
-      <TaskFilters filters={filters} setFilters={setFilters} />
+      <div>
+        <h1 className="text-xl font-semibold">Stretch</h1>
+        <p className="mt-1 text-sm text-neutral-600">
+          Stage potential tasks here without affecting the team&apos;s workload. They stay off
+          the main list and the burn-up chart until you press{" "}
+          <span className="font-medium text-neutral-900">Add</span>.
+        </p>
+      </div>
+
+      <NewTaskRow onCreated={fetchTasks} stretch />
 
       {loading ? (
         <p className="text-sm text-neutral-500">Loading…</p>
-      ) : filtered.length === 0 ? (
+      ) : sorted.length === 0 ? (
         <p className="text-sm text-neutral-500">
-          {tasks.length === 0 ? "No tasks yet. Add one above or bulk-paste on the Bulk add page." : "No tasks match the current filters."}
+          No stretch tasks yet. Add one above to stage it for later.
         </p>
       ) : (
         <div className="space-y-2">
-          {filtered.map((t) => (
-            <TaskRow key={t.id} task={t} />
+          {sorted.map((t) => (
+            <StretchTaskRow key={t.id} task={t} />
           ))}
         </div>
       )}
