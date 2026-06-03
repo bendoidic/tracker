@@ -2,10 +2,23 @@ import { Task } from "./types";
 
 export type BurnupPoint = {
   ts: number;       // epoch ms at hour start, used for x-axis ordering
+  x: number;        // compressed-time coordinate; off-peak hours advance it less
   label: string;    // human-readable "MM-DD HH:00"
   scope: number;
   done: number;
 };
+
+// Work day runs 09:00–18:00. Hours outside that window rarely see task churn,
+// so they advance the x-axis at a fraction of the width to keep them visible
+// without dominating the chart.
+const WORK_START_HOUR = 9;
+const WORK_END_HOUR = 18;
+const OFF_PEAK_WIDTH = 0.25;
+
+function hourWidth(d: Date): number {
+  const h = d.getHours();
+  return h >= WORK_START_HOUR && h < WORK_END_HOUR ? 1 : OFF_PEAK_WIDTH;
+}
 
 function pad(n: number): string {
   return String(n).padStart(2, "0");
@@ -30,7 +43,7 @@ function addHours(d: Date, n: number): Date {
 export function burnupSeries(tasks: Task[], now: Date = new Date()): BurnupPoint[] {
   const endHour = floorToHour(now);
   if (tasks.length === 0) {
-    return [{ ts: endHour.getTime(), label: hourLabel(endHour), scope: 0, done: 0 }];
+    return [{ ts: endHour.getTime(), x: 0, label: hourLabel(endHour), scope: 0, done: 0 }];
   }
 
   const earliest = tasks.reduce((min, t) => {
@@ -40,6 +53,7 @@ export function burnupSeries(tasks: Task[], now: Date = new Date()): BurnupPoint
   const start = floorToHour(earliest);
 
   const series: BurnupPoint[] = [];
+  let x = 0;
   for (let cur = start; cur <= endHour; cur = addHours(cur, 1)) {
     // count anything that happened during this hour or earlier
     const cutoff = new Date(cur);
@@ -50,7 +64,9 @@ export function burnupSeries(tasks: Task[], now: Date = new Date()): BurnupPoint
       if (new Date(t.created_at) <= cutoff) scope += 1;
       if (t.completed_at && new Date(t.completed_at) <= cutoff) done += 1;
     }
-    series.push({ ts: cur.getTime(), label: hourLabel(cur), scope, done });
+    series.push({ ts: cur.getTime(), x, label: hourLabel(cur), scope, done });
+    // advance the compressed axis by this hour's width
+    x += hourWidth(cur);
   }
   return series;
 }

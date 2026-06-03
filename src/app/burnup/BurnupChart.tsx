@@ -55,6 +55,31 @@ export function BurnupChart({ target }: { target: string | null }) {
     [tasks]
   );
 
+  // The x-axis is in compressed time, so map each x back to its hour label.
+  const labelByX = useMemo(
+    () => new Map(series.map((p) => [p.x, p.label])),
+    [series]
+  );
+
+  // Evenly-spaced ticks across the compressed axis. Because off-peak hours are
+  // narrower, work hours naturally get more labels.
+  const ticks = useMemo(() => {
+    if (series.length === 0) return [];
+    const maxX = series[series.length - 1].x;
+    if (maxX === 0) return [series[0].x];
+    const COUNT = 8;
+    const chosen = new Set<number>();
+    for (let i = 0; i < COUNT; i++) {
+      const targetX = (maxX * i) / (COUNT - 1);
+      let best = series[0];
+      for (const p of series) {
+        if (Math.abs(p.x - targetX) < Math.abs(best.x - targetX)) best = p;
+      }
+      chosen.add(best.x);
+    }
+    return [...chosen].sort((a, b) => a - b);
+  }, [series]);
+
   const daysLeft = useMemo(() => {
     if (!target) return null;
     const t = new Date(target);
@@ -103,16 +128,19 @@ export function BurnupChart({ target }: { target: string | null }) {
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#404040" />
             <XAxis
-              dataKey="label"
+              dataKey="x"
+              type="number"
+              domain={["dataMin", "dataMax"]}
+              ticks={ticks}
+              tickFormatter={(x: number) => labelByX.get(x) ?? ""}
               stroke="#a3a3a3"
               tick={{ fontSize: 14 }}
-              interval="preserveStartEnd"
-              minTickGap={60}
             />
             <YAxis stroke="#a3a3a3" tick={{ fontSize: 14 }} allowDecimals={false} />
             <Tooltip
               contentStyle={{ background: "#171717", border: "1px solid #404040", color: "#fafafa" }}
               labelStyle={{ color: "#fafafa" }}
+              labelFormatter={(x: number) => labelByX.get(x) ?? ""}
             />
             <Area
               type="monotone"
